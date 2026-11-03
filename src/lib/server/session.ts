@@ -1,94 +1,96 @@
 import "server-only";
 import { createHmac, timingSafeEqual } from "node:crypto";
 import { cookies } from "next/headers";
-import { redirect, notFound } from "next/navigation";
-import {
-  loadConfig,
-  organizationsForOperator,
-  type ControlCenterConfig,
-  type OperatorConfig,
-  type OrganizationConfig,
-} from "./config";
+import { notFound, redirect } from "next/navigation";
+import { api } from "@/lib/api";
+import type { FeatureKey, Organization, Role, Viewer } from "@/lib/api/types";
+import { getLang } from "@/lib/i18n/server";
+import type { Lang } from "@/lib/i18n";
+import { sectionAccess, sectionByKey, type Access, type SectionKey } from "@/lib/features";
 
-export const SESSION_COOKIE = "gdx_cc_session";
+export const SESSION_COOKIE = "gdx_portal_session";
+const TTL_SECONDS = 8 * 3600;
 
 interface SessionPayload {
-  op: string;
-  exp: number; // epoch seconds
-}
-
-export interface Session {
-  operator: OperatorConfig;
-  organizations: OrganizationConfig[];
-  expiresAt: number;
+  uid: string;
+  exp: number;
 }
 
 /**
- * DEMO BUILD: the cookie is still HMAC-signed, but the secret falls back to a public constant
- * when GDX_CC_SESSION_SECRET is not set. That is acceptable only because the demo serves
- * fictional data and accepts any access key anyway.
+ * DEMO BUILD: any credentials sign in (see app/actions.ts). The cookie is still HMAC-signed; the
+ * secret falls back to a public constant when GDX_SESSION_SECRET is unset — acceptable only for
+ * the demo with fictional data. Real auth (own / Supabase / Clerk, with room for SSO) replaces this.
  */
-function sessionSecret(): Buffer {
-  const value = process.env.GDX_CC_SESSION_SECRET;
-  return Buffer.from(value && value.length >= 32 ? value : "geminai-dx-public-demo-session-secret-not-confidential", "utf8");
+function secret(): Buffer {
+  const v = process.env.GDX_SESSION_SECRET;
+  return Buffer.from(v && v.length >= 32 ? v : "geminai-dx-portal-demo-secret-not-confidential", "utf8");
 }
 
-const b64url = (buf: Buffer) => buf.toString("base64url");
-
-export function signSession(payload: SessionPayload, secret: Buffer): string {
-  const body = b64url(Buffer.from(JSON.stringify(payload), "utf8"));
-  const mac = b64url(createHmac("sha256", secret).update(body).digest());
+export function signSession(payload: SessionPayload, key = secret()): string {
+  const body = Buffer.from(JSON.stringify(payload), "utf8").toString("base64url");
+  const mac = createHmac("sha256", key).update(body).digest("base64url");
   return `${body}.${mac}`;
 }
 
-export function verifySession(token: string | undefined, secret: Buffer, nowSeconds = Date.now() / 1000): SessionPayload | null {
+export function verifySession(token: string | undefined, key = secret(), now = Date.now() / 1000): SessionPayload | null {
   if (!token || token.length > 1024) return null;
   const [body, mac, extra] = token.split(".");
   if (!body || !mac || extra !== undefined) return null;
-  const expected = createHmac("sha256", secret).update(body).digest();
-  let given: Buffer;
-  try {
-    given = Buffer.from(mac, "base64url");
-  } catch {
-    return null;
-  }
+  const expected = createHmac("sha256", key).update(body).digest();
+  const given = Buffer.from(mac, "base64url");
   if (given.length !== expected.length || !timingSafeEqual(given, expected)) return null;
   try {
-    const payload = JSON.parse(Buffer.from(body, "base64url").toString("utf8")) as SessionPayload;
-    if (typeof payload.op !== "string" || typeof payload.exp !== "number" || payload.exp <= nowSeconds) return null;
-    return payload;
+    const p = JSON.parse(Buffer.from(body, "base64url").toString("utf8")) as SessionPayload;
+    return typeof p.uid === "string" && typeof p.exp === "number" && p.exp > now ? p : null;
   } catch {
     return null;
   }
 }
 
-export function issueSessionCookie(cfg: ControlCenterConfig, operator: OperatorConfig): { value: string; maxAge: number } {
-  const maxAge = cfg.sessionTtlMinutes * 60;
-  const value = signSession({ op: operator.id, exp: Math.floor(Date.now() / 1000) + maxAge }, sessionSecret());
-  return { value, maxAge };
+export function issueSession(uid: string) {
+  return { value: signSession({ uid, exp: Math.floor(Date.now() / 1000) + TTL_SECONDS }), maxAge: TTL_SECONDS };
 }
 
-/** Resolve the current operator from the signed cookie, or null. */
-export async function getSession(): Promise<Session | null> {
-  const cfg = loadConfig();
-  const jar = await cookies();
-  const payload = verifySession(jar.get(SESSION_COOKIE)?.value, sessionSecret());
-  if (!payload) return null;
-  const operator = cfg.operators.find((o) => o.id === payload.op);
-  if (!operator) return null;
-  return { operator, organizations: organizationsForOperator(cfg, operator), expiresAt: payload.exp };
+export async function getViewer(): Promise<Viewer | null> {
+  const p = verifySession((await cookies()).get(SESSION_COOKIE)?.value);
+  if (!p) return null;
+  return api().getViewer(p.uid);
 }
 
-export async function requireSession(): Promise<Session> {
-  const session = await getSession();
-  if (!session) redirect("/login");
-  return session;
+export async function requireViewer(): Promise<Viewer> {
+  const v = await getViewer();
+  if (!v) redirect("/login");
+  return v;
 }
 
-/** Unknown organizations return 404. */
-export async function requireOrganization(orgId: string): Promise<{ session: Session; organization: OrganizationConfig }> {
-  const session = await requireSession();
-  const organization = session.organizations.find((o) => o.id === orgId);
-  if (!organization) notFound();
-  return { session, organization };
+export interface OrgContext {
+  viewer: Viewer;
+  org: Organization;
+  flags: Record<FeatureKey, boolean>;
+  /** Role in this org (staff → admin). */
+  role: Role | null;
+  staff: boolean;
+  lang: Lang;
+  actor: string;
+  access: (section: SectionKey) => Access;
+}
+
+/** Resolve viewer + organization + flags for a page under /o/{org}. Unknown or forbidden org → 404. */
+export async function requireOrg(orgId: string): Promise<OrgContext> {
+  const viewer = await requireViewer();
+  if (!viewer.organizations.some((o) => o.id === orgId)) notFound();
+  const [org, flags, lang] = await Promise.all([api().getOrganization(orgId), api().getFeatureFlags(orgId), getLang()]);
+  if (!org) notFound();
+  const staff = viewer.user.geminaiStaff;
+  const role = staff ? "admin" : (viewer.user.memberships.find((m) => m.orgId === orgId)?.role ?? null);
+  return {
+    viewer,
+    org,
+    flags: flags.flags,
+    role,
+    staff,
+    lang,
+    actor: viewer.user.id,
+    access: (section) => sectionAccess(sectionByKey(section), { phase: org.phase, flags: flags.flags, role, staff }),
+  };
 }

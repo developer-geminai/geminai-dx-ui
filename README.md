@@ -1,58 +1,70 @@
-# GeminAI Dx — Agent Control Center (demo)
+# GeminAI Dx — Portal del cliente (UI, mock API)
 
-A business-first, multi-organization, multi-agent control center for GeminAI Dx agents, built with **Next.js 15 (App Router), React 19, TypeScript (strict), Tailwind CSS and shadcn/ui-style components**, using the visual identity of [geminaidx.com](https://www.geminaidx.com/).
+The client's single door to GeminAI Dx, from the invitation to managing agents in production. It implements the **UI spec v0.1** (Oct 30, 2026) with **Next.js 15 (App Router), React 19, TypeScript strict and Tailwind**, using the brand of the CRM and the contract portal (ink `#010D13`, green `#139279`, forest `#001C17`, amber only for "requires attention"; Newsreader + IBM Plex Sans/Mono; ES/EN).
 
-> **This repository is a public demo build.**
-> - **Sign-in accepts any access key.** The login page is shown, but there is no real authentication.
-> - **All data is fictional.** It is a bundled snapshot (`src/lib/server/demo/snapshot.json`) of the synthetic multi-agent demo from the GeminAI Dx agent console. It contains three fictional agents and eleven fictional cases in two demo organizations. No real organization, customer or case is included, and no backend is called.
-> - Demo timestamps are shifted forward by whole days at load, so the newest demo activity always looks recent.
-> - The app is read-only. Human Inbox answers can be drafted but not submitted.
+> **Demo build.** Login accepts any email + password. All data is fictional and served by an in-memory **mock API** that resets on server restart. Swap it for the real backend with `GDX_API_MODE=http GDX_API_URL=…` — see [docs/API.md](docs/API.md).
 
-The production version, with real operator authentication and per-organization agent backends, lives in the private automation repository.
-
-![Overview](docs/01-overview.png)
-
-## Deploy to Vercel
-
-1. Import this repository in Vercel. The framework preset **Next.js** is detected automatically.
-2. Keep the default build settings: install `npm install`, build `next build`.
-3. No environment variables are required. You can optionally set `GDX_CC_SESSION_SECRET` (any string of 32 or more characters) to sign demo session cookies with your own secret.
-
-## Run locally
-
-Requires Node.js 20.9 or later.
+## Run
 
 ```powershell
 npm install
-npm run dev          # http://localhost:3100, then sign in with any access key
+npm run dev          # http://localhost:3100
 ```
 
-## Pages
+Sign in with the pre-filled `demo@geminai-dx.com` (GeminAI staff: client selector, Roadmap, internal view) or pick a client account on the login page:
 
-| Route | Purpose |
+| Account | Organization | Phase |
+| --- | --- | --- |
+| `lucia.ferrer@helios.demo` (Admin), `javier.ortega@helios.demo` (Reviewer) | Grupo Médico Helios — 2 companies, 3 centers | 2 · Automation (+ one department in diagnostic) |
+| `raul.medina@brisa.demo` | Logística Brisa | 1 · Diagnostic (day 12 of 21) |
+| `ines.calvo@aurora.demo` | Clínica Aurora | 0 · Onboarding (contracts pending) |
+
+## Phases and the Roadmap
+
+| Phase | Spec phases | Opens |
+| --- | --- | --- |
+| 0 · Onboarding | Onboarding | Home checklist, onboarding wizard, Devices & privacy, Contracts, Settings |
+| 1 · Diagnostic | Diagnóstico | + Diagnostic (capture progress, results dashboard, history) |
+| 2 · Automation | Construcción, Shadow y supervisado, Activo | + Agents, Questions, Billing, Audit |
+
+Sections of later phases are shown **locked with what unlocks them**, never empty. **`/o/{org}/roadmap`** (staff and client admins) lists every feature by phase and release (V1 / V1.5 / V2), with a switch per client (all on by default) and a phase switcher to preview the portal as the client will see it.
+
+## Routes
+
+| Route | Screen |
 | --- | --- |
-| `/o/{org}` | **Overview**: agents, cases, open questions, needs-review metrics; status by agent; recent activity |
-| `/o/{org}/agents` | **Agents**: search, filter, sort; performance comparison |
-| `/o/{org}/agents/{agent}` | **Agent details** |
-| `/o/{org}/journeys` | **Agent Journeys**: case list with search, status and attention filters |
-| `/o/{org}/journeys/{agent}/{case}` | **Journey**: outcome, eight-question summary, timeline, input, questions, evidence checks, technical details and audit export |
-| `/o/{org}/inbox` | **Human Inbox**: questions across agents with full context |
-| `/o/{org}/analytics` | **Analytics**: time windows, activity per agent, business effects, comparisons, cross-organization comparison |
+| `/login` | Fake login (password, Google, Microsoft) |
+| `/o/{org}` | Inicio — checklist (phase 0/1) or KPIs, urgent strip, recent runs, next opportunity (phase 2) |
+| `/o/{org}/onboarding` | 6-step wizard (account, company, contracts, privacy, devices, done) |
+| `/o/{org}/questions` | Questions inbox: questions, exceptions, approvals, "Aplicar siempre" |
+| `/o/{org}/agents`, `/o/{org}/agents/{id}` | Agent list; agent page with Summary, Runs (step timeline), Shadow, Learned, Performance; Pause always visible |
+| `/o/{org}/diagnostic` | Capture progress, results (ported analytics dashboard), history |
+| `/o/{org}/devices` | Computers with tracker, blocklist, transparency |
+| `/o/{org}/contracts` | Pilot, DPA and service contracts per company |
+| `/o/{org}/billing` | Plan by components, usage vs included, invoices, payment method |
+| `/o/{org}/settings`, `/o/{org}/settings/audit` | Profile, users & roles, companies & centers, notifications, data, security; audit log with CSV/PDF |
+| `/o/{org}/expand` | "Ampliar servicio" catalogue → CRM request |
+| `/o/{org}/roadmap` | Feature toggles + phase preview |
+| `/o/{org}/internal` | GeminAI-only cost and health view |
+| `/transparency/{org}` | Public page for monitored employees (no login) |
+
+## Where things live
+
+| Path | Role |
+| --- | --- |
+| `src/lib/api/types.ts` · `contract.ts` | Domain model + `PortalApi` interface (the backend contract) |
+| `src/lib/api/mock/` | Fictional seed (`profiles.ts`, `seed.ts`) and in-memory implementation |
+| `src/lib/api/http.ts` | REST client with the same interface |
+| `src/lib/features.ts` | Sections, unlock phase, roles, feature catalogue for the Roadmap |
+| `src/lib/permissions.ts` | Role → permission matrix (spec "Roles y permisos") |
+| `src/lib/i18n/` | ES (default) / EN; shared vocabulary in `common.ts`, module copy next to each module |
+| `src/lib/server/session.ts` | Signed session cookie, `requireOrg()` page context |
 
 ## Commands
 
 ```powershell
-npm run typecheck    # tsc --noEmit (strict)
-npm run lint         # next lint
-npm test             # vitest
-npm run build        # production build
+npm run typecheck
+npm run lint
+npm test
+npm run build
 ```
-
-## Where the demo wiring lives
-
-| File | Role |
-| --- | --- |
-| `src/lib/server/demo/data.ts` | Serves the read endpoints (agents, overview, cases, questions, insights, case detail, runs, audit, question context) from the snapshot, including case filtering |
-| `src/lib/server/config.ts` | Fixed demo organizations and demo operator |
-| `src/app/actions.ts` | Login: any non-empty key signs in as the demo operator |
-| `src/lib/server/session.ts` | HMAC-signed session cookie; uses a public fallback secret when `GDX_CC_SESSION_SECRET` is unset |

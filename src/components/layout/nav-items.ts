@@ -1,9 +1,18 @@
-export const NAV_ITEMS = [
-  { segment: "", label: "Overview", icon: "overview" },
-  { segment: "agents", label: "Agents", icon: "agents" },
-  { segment: "journeys", label: "Agent Journeys", icon: "journeys" },
-  { segment: "inbox", label: "Human Inbox", icon: "inbox" },
-  { segment: "analytics", label: "Analytics", icon: "analytics" },
-] as const;
+import type { Access, SectionKey } from "@/lib/features";
 
-export type NavIcon = (typeof NAV_ITEMS)[number]["icon"];
+export interface NavItem {
+  key: SectionKey;
+  href: string;
+  label: string;
+  access: Exclude<Access, "hidden" | "forbidden">;
+  badge?: number;
+  /** One-line unlock hint for locked items. */
+  hint?: string;
+}
+
+/** Order of the main menu (spec "Mapa de navegación"): eight entries. */
+export const MAIN_SECTIONS: SectionKey[] = ["home", "questions", "agents", "diagnostic", "devices", "contracts", "billing", "settings"];
+/** Below the separator. */
+export const EXTRA_SECTIONS: SectionKey[] = ["roadmap", "internal"];
+/** Mobile bottom bar: Home, Agents, Questions + "More". */
+export const MOBILE_SECTIONS: SectionKey[] = ["home", "agents", "questions"];

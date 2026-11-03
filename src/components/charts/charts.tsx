@@ -1,89 +1,31 @@
 "use client";
-import { useEffect, useState } from "react";
-import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis, type TooltipProps } from "recharts";
+import { useState } from "react";
+import { Bar, BarChart, CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { cn } from "@/lib/utils";
+import { useLang } from "@/lib/i18n/client";
 
 /**
- * Accessible bar charts.
- * - Colours come from validated CSS tokens (--chart-1..4, --chart-other), resolved at runtime so
- *   light/dark each use their own validated steps (SVG presentation attributes can't read var()).
- * - Every chart has a hover tooltip, a legend for >= 2 series, and a "table view" toggle.
- * - Text always uses ink tokens, never the series colour.
+ * Small chart kit. Colors come from the validated --chart-1..4 tokens (see globals.css), assigned
+ * in fixed order and never cycled. Single axis only. ≥2 series → legend. Every chart has a
+ * hover tooltip and a "table" view for accessibility.
  */
+export const SERIES_COLORS = ["rgb(var(--chart-1))", "rgb(var(--chart-2))", "rgb(var(--chart-3))", "rgb(var(--chart-4))"];
+const OTHER = "rgb(var(--chart-other))";
 
-export interface Series {
+export interface SeriesDef {
   key: string;
   label: string;
-  /** CSS colour, e.g. "rgb(var(--chart-1))". */
-  color: string;
 }
 
-function useResolvedColors(colors: string[]): string[] {
-  const [resolved, setResolved] = useState<string[]>(colors.map(() => "#888"));
-  const signature = colors.join("|");
-  useEffect(() => {
-    const read = () => {
-      const style = getComputedStyle(document.documentElement);
-      setResolved(
-        signature.split("|").map((c) => {
-          const m = /^rgb\(var\((--[a-z0-9-]+)\)\)$/.exec(c);
-          return m ? `rgb(${style.getPropertyValue(m[1]!).trim().split(/\s+/).join(",")})` : c;
-        }),
-      );
-    };
-    read();
-    const obs = new MutationObserver(read);
-    obs.observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
-    const mq = window.matchMedia("(prefers-color-scheme: dark)");
-    mq.addEventListener("change", read);
-    return () => {
-      obs.disconnect();
-      mq.removeEventListener("change", read);
-    };
-  }, [signature]);
-  return resolved;
-}
+const t = { es: { table: "Ver tabla", chart: "Ver gráfico" }, en: { table: "Show table", chart: "Show chart" } };
 
-function useInk() {
-  const [ink, setInk] = useState({ muted: "#5e6568", line: "#e5e6e3", surface: "#fff" });
-  useEffect(() => {
-    const read = () => {
-      const s = getComputedStyle(document.documentElement);
-      const v = (n: string) => `rgb(${s.getPropertyValue(n).trim().split(/\s+/).join(",")})`;
-      setInk({ muted: v("--muted"), line: v("--line"), surface: v("--surface") });
-    };
-    read();
-    const obs = new MutationObserver(read);
-    obs.observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
-    return () => obs.disconnect();
-  }, []);
-  return ink;
-}
-
-function ChartTooltip({ active, payload, label }: TooltipProps<number, string>) {
-  if (!active || !payload?.length) return null;
-  const rows = payload.filter((p) => Number(p.value) > 0);
-  return (
-    <div className="rounded-md border border-line bg-surface px-3 py-2 text-xs shadow-card">
-      <p className="mb-1 font-semibold text-ink">{label}</p>
-      {(rows.length ? rows : payload).map((p) => (
-        <p key={String(p.dataKey)} className="flex items-center gap-2 text-muted">
-          <span className="inline-block size-2.5 rounded-[3px]" style={{ background: p.color }} aria-hidden />
-          <span className="flex-1">{p.name}</span>
-          <span className="tabular font-medium text-ink">{p.value}</span>
-        </p>
-      ))}
-    </div>
-  );
-}
-
-export function Legend({ series, colors }: { series: Series[]; colors: string[] }) {
+function Legend({ series }: { series: SeriesDef[] }) {
   if (series.length < 2) return null;
   return (
-    <ul className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted" aria-label="Legend">
+    <ul className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted">
       {series.map((s, i) => (
-        <li key={s.key} className="flex items-center gap-1.5">
-          <span className="inline-block size-2.5 rounded-[3px]" style={{ background: colors[i] }} aria-hidden />
+        <li key={s.key} className="inline-flex items-center gap-1.5">
+          <span aria-hidden className="size-2.5 rounded-[3px]" style={{ background: SERIES_COLORS[i] ?? OTHER }} />
           {s.label}
         </li>
       ))}
@@ -91,17 +33,31 @@ export function Legend({ series, colors }: { series: Series[]; colors: string[] 
   );
 }
 
-function DataTable({ rows, categoryKey, categoryLabel, series }: { rows: Record<string, string | number>[]; categoryKey: string; categoryLabel: string; series: Series[] }) {
+function ChartTooltip({ active, payload, label, format, labelFormat }: { active?: boolean; payload?: { name: string; value: number; color: string; dataKey: string }[]; label?: string; format: (v: number) => string; labelFormat?: (l: string) => string }) {
+  if (!active || !payload?.length) return null;
   return (
-    <div className="overflow-x-auto">
-      <table className="w-full text-left text-sm">
-        <thead className="text-xs text-muted">
-          <tr className="border-b border-line">
-            <th scope="col" className="py-2 pr-4 font-medium">
-              {categoryLabel}
-            </th>
+    <div className="rounded-md border border-line bg-surface px-3 py-2 text-xs shadow-card">
+      <p className="mb-1 font-medium text-ink">{labelFormat && label ? labelFormat(label) : label}</p>
+      {payload.map((p) => (
+        <p key={p.dataKey} className="flex items-center gap-2 text-muted">
+          <span aria-hidden className="size-2 rounded-[2px]" style={{ background: p.color }} />
+          <span>{p.name}</span>
+          <span className="tabular ml-auto pl-3 font-medium text-ink">{format(p.value)}</span>
+        </p>
+      ))}
+    </div>
+  );
+}
+
+function TableView({ rows, xKey, series, format, labelFormat }: { rows: Record<string, number | string>[]; xKey: string; series: SeriesDef[]; format: (v: number) => string; labelFormat?: (l: string) => string }) {
+  return (
+    <div className="max-h-72 overflow-auto">
+      <table className="data-table">
+        <thead>
+          <tr>
+            <th />
             {series.map((s) => (
-              <th key={s.key} scope="col" className="py-2 pr-4 text-right font-medium">
+              <th key={s.key} className="text-right">
                 {s.label}
               </th>
             ))}
@@ -109,13 +65,11 @@ function DataTable({ rows, categoryKey, categoryLabel, series }: { rows: Record<
         </thead>
         <tbody>
           {rows.map((r) => (
-            <tr key={String(r[categoryKey])} className="border-b border-line/60">
-              <th scope="row" className="py-1.5 pr-4 font-normal">
-                {r[categoryKey]}
-              </th>
+            <tr key={String(r[xKey])}>
+              <td>{labelFormat ? labelFormat(String(r[xKey])) : String(r[xKey])}</td>
               {series.map((s) => (
-                <td key={s.key} className="tabular py-1.5 pr-4 text-right">
-                  {r[s.key] ?? 0}
+                <td key={s.key} className="tabular text-right">
+                  {format(Number(r[s.key] ?? 0))}
                 </td>
               ))}
             </tr>
@@ -126,73 +80,84 @@ function DataTable({ rows, categoryKey, categoryLabel, series }: { rows: Record<
   );
 }
 
-export interface BarChartCardProps {
-  rows: Record<string, string | number>[];
-  categoryKey: string;
-  categoryLabel: string;
-  series: Series[];
-  layout?: "vertical-bars" | "horizontal-bars";
-  stacked?: boolean;
+interface BaseProps {
+  rows: Record<string, number | string>[];
+  xKey: string;
+  series: SeriesDef[];
   height?: number;
+  format?: (v: number) => string;
+  labelFormat?: (l: string) => string;
   ariaLabel: string;
   className?: string;
 }
 
-export function BarChartCard({ rows, categoryKey, categoryLabel, series, layout = "vertical-bars", stacked = true, height = 240, ariaLabel, className }: BarChartCardProps) {
-  const [table, setTable] = useState(false);
-  const colors = useResolvedColors(series.map((s) => s.color));
-  const ink = useInk();
-  const horizontal = layout === "horizontal-bars";
-  const rowHeight = stacked || series.length === 1 ? 38 : series.length * 14 + 22;
-  const computedHeight = horizontal ? Math.max(120, rows.length * rowHeight + 40) : height;
-
+function Frame({ children, table, className }: { children: React.ReactNode; table: React.ReactNode; className?: string }) {
+  const lang = useLang();
+  const [showTable, setShowTable] = useState(false);
   return (
-    <div className={cn("min-w-0", className)}>
-      <div className="mb-2 flex justify-end">
-        <button type="button" className="text-xs font-medium text-brand underline-offset-2 hover:underline" onClick={() => setTable((t) => !t)} aria-pressed={table}>
-          {table ? "Show chart" : "Show table"}
+    <div className={cn("relative", className)}>
+      <div className="mb-1 flex justify-end">
+        <button type="button" className="text-xs font-medium text-brand-ink hover:underline" onClick={() => setShowTable((v) => !v)}>
+          {showTable ? t[lang].chart : t[lang].table}
         </button>
       </div>
-      {table ? (
-        <DataTable rows={rows} categoryKey={categoryKey} categoryLabel={categoryLabel} series={series} />
-      ) : (
-        <>
-          <div role="img" aria-label={ariaLabel} style={{ height: computedHeight }}>
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={rows} layout={horizontal ? "vertical" : "horizontal"} margin={{ top: 4, right: 12, bottom: 4, left: horizontal ? 8 : -12 }} barCategoryGap={horizontal ? 10 : "22%"}>
-                <CartesianGrid stroke={ink.line} strokeDasharray="0" vertical={horizontal} horizontal={!horizontal} />
-                {horizontal ? (
-                  <>
-                    <XAxis type="number" allowDecimals={false} tick={{ fill: ink.muted, fontSize: 11 }} axisLine={false} tickLine={false} />
-                    <YAxis type="category" dataKey={categoryKey} width={150} tick={{ fill: ink.muted, fontSize: 12 }} axisLine={false} tickLine={false} />
-                  </>
-                ) : (
-                  <>
-                    <XAxis dataKey={categoryKey} tick={{ fill: ink.muted, fontSize: 11 }} axisLine={false} tickLine={false} interval="preserveStartEnd" minTickGap={12} />
-                    <YAxis allowDecimals={false} tick={{ fill: ink.muted, fontSize: 11 }} axisLine={false} tickLine={false} />
-                  </>
-                )}
-                <Tooltip content={<ChartTooltip />} cursor={{ fill: ink.line, opacity: 0.5 }} />
-                {series.map((s, i) => (
-                  <Bar
-                    key={s.key}
-                    dataKey={s.key}
-                    name={s.label}
-                    stackId={stacked ? "a" : undefined}
-                    fill={colors[i]}
-                    stroke={ink.surface}
-                    strokeWidth={stacked && series.length > 1 ? 1 : 0}
-                    radius={stacked && i !== series.length - 1 ? 0 : horizontal ? [0, 4, 4, 0] : [4, 4, 0, 0]}
-                    maxBarSize={horizontal ? (stacked ? 22 : 12) : 36}
-                    isAnimationActive={false}
-                  />
-                ))}
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-          <Legend series={series} colors={colors} />
-        </>
-      )}
+      {showTable ? table : children}
     </div>
   );
 }
+
+const axisProps = { tick: { fontSize: 11, fill: "rgb(var(--muted))" }, tickLine: false, axisLine: false } as const;
+
+export function BarTrend({ rows, xKey, series, height = 220, format = (v) => String(v), labelFormat, ariaLabel, stacked = true, className }: BaseProps & { stacked?: boolean }) {
+  return (
+    <Frame className={className} table={<TableView rows={rows} xKey={xKey} series={series} format={format} labelFormat={labelFormat} />}>
+      <div role="img" aria-label={ariaLabel} style={{ height }}>
+        <ResponsiveContainer width="100%" height="100%">
+          <BarChart data={rows} margin={{ top: 4, right: 4, bottom: 0, left: -12 }} barCategoryGap="28%">
+            <CartesianGrid vertical={false} stroke="rgb(var(--line))" />
+            <XAxis dataKey={xKey} {...axisProps} tickFormatter={labelFormat} interval="preserveStartEnd" minTickGap={12} />
+            <YAxis {...axisProps} width={44} tickFormatter={(v: number) => format(v)} />
+            <Tooltip cursor={{ fill: "rgb(var(--paper-alt))" }} content={<ChartTooltip format={format} labelFormat={labelFormat} />} />
+            {series.map((s, i) => (
+              <Bar
+                key={s.key}
+                dataKey={s.key}
+                name={s.label}
+                stackId={stacked ? "a" : undefined}
+                fill={SERIES_COLORS[i] ?? OTHER}
+                stroke="rgb(var(--surface))"
+                strokeWidth={stacked && series.length > 1 ? 1 : 0}
+                radius={!stacked || i === series.length - 1 ? [4, 4, 0, 0] : 0}
+                maxBarSize={28}
+              />
+            ))}
+          </BarChart>
+        </ResponsiveContainer>
+      </div>
+      <Legend series={series} />
+    </Frame>
+  );
+}
+
+export function LineTrend({ rows, xKey, series, height = 220, format = (v) => String(v), labelFormat, ariaLabel, className, domain }: BaseProps & { domain?: [number, number] }) {
+  return (
+    <Frame className={className} table={<TableView rows={rows} xKey={xKey} series={series} format={format} labelFormat={labelFormat} />}>
+      <div role="img" aria-label={ariaLabel} style={{ height }}>
+        <ResponsiveContainer width="100%" height="100%">
+          <LineChart data={rows} margin={{ top: 8, right: 8, bottom: 0, left: -12 }}>
+            <CartesianGrid vertical={false} stroke="rgb(var(--line))" />
+            <XAxis dataKey={xKey} {...axisProps} tickFormatter={labelFormat} interval="preserveStartEnd" minTickGap={12} />
+            <YAxis {...axisProps} width={44} tickFormatter={(v: number) => format(v)} domain={domain ?? ["auto", "auto"]} />
+            <Tooltip cursor={{ stroke: "rgb(var(--muted))", strokeDasharray: "3 3" }} content={<ChartTooltip format={format} labelFormat={labelFormat} />} />
+            {series.map((s, i) => (
+              <Line key={s.key} type="monotone" dataKey={s.key} name={s.label} stroke={SERIES_COLORS[i] ?? OTHER} strokeWidth={2} dot={false} activeDot={{ r: 4, strokeWidth: 2, stroke: "rgb(var(--surface))" }} />
+            ))}
+          </LineChart>
+        </ResponsiveContainer>
+      </div>
+      <Legend series={series} />
+    </Frame>
+  );
+}
+
+export { HBars } from "./hbars";

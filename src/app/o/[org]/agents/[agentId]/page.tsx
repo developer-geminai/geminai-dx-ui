@@ -1,175 +1,139 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, ArrowRight } from "lucide-react";
-import { AgentAvatar, SOURCE_LABELS } from "@/components/agents/agent-card";
-import { MetricCard } from "@/components/dashboard/metric-card";
-import { CaseList } from "@/components/dashboard/case-list";
-import { QuestionPreviewList } from "@/components/inbox/question-preview-list";
-import { DispositionChart, HistoricalEvaluations, QuestionStates } from "@/components/analytics/insight-panels";
-import { BarChartCard } from "@/components/charts/charts";
-import { agentSeries } from "@/components/charts/agent-series";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { EmptyState, ErrorState } from "@/components/ui/states";
-import { attempt, orgAgents, orgContext } from "@/lib/server/org-data";
-import { activityByDay, labelFor, statusLabels } from "@/lib/analytics";
-import { orgPath, withParams } from "@/lib/utils";
-import { percent } from "@/lib/format";
+import { ArrowLeft, CircleHelp, PauseCircle } from "lucide-react";
+import { sectionGate } from "@/components/locked-section";
+import { ModeBadge } from "@/components/status-badges";
+import { PauseAgentButton } from "@/components/agents/pause-button";
+import { RulesList } from "@/components/agents/rules-list";
+import { PerformanceTab, RunsTab, ShadowTab, SummaryTab } from "@/components/agents/agent-tabs";
+import { agentsMsg } from "@/components/agents/messages";
+import { api } from "@/lib/api";
+import type { FeatureKey, RunStatus } from "@/lib/api/types";
+import { requireOrg } from "@/lib/server/session";
+import { can } from "@/lib/permissions";
+import { common } from "@/lib/i18n/common";
+import { fmt } from "@/lib/format";
+import { cn, first, orgPath } from "@/lib/utils";
 
-export const metadata: Metadata = { title: "Agent details" };
+export const metadata: Metadata = { title: "Agente" };
 
-export default async function AgentDetailPage({ params }: { params: Promise<{ org: string; agentId: string }> }) {
+const TABS = ["resumen", "ejecuciones", "shadow", "aprendido", "rendimiento"] as const;
+type Tab = (typeof TABS)[number];
+const TAB_FLAG: Record<Tab, FeatureKey> = {
+  resumen: "agents.summary",
+  ejecuciones: "agents.runs",
+  shadow: "agents.shadow",
+  aprendido: "agents.learned",
+  rendimiento: "agents.performance",
+};
+const RUN_STATUSES: RunStatus[] = ["completed", "escalated", "failed", "running", "awaiting_approval"];
+
+export default async function AgentPage({ params, searchParams }: { params: Promise<{ org: string; agentId: string }>; searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   const p = await params;
-  const org = decodeURIComponent(p.org);
+  const ctx = await requireOrg(decodeURIComponent(p.org));
+  const gate = sectionGate(ctx, "agents");
+  if (gate) return gate;
+  const sp = await searchParams;
+  const orgId = ctx.org.id;
   const agentId = decodeURIComponent(p.agentId);
-  const { organization, client } = await orgContext(org);
-  const agentsRes = await attempt(() => orgAgents(org));
-  if (!agentsRes.ok) return <ErrorState title={agentsRes.error.title} detail={agentsRes.error.detail} />;
-  const agent = agentsRes.data.items.find((a) => a.id === agentId);
+  const agent = await api().getAgent(orgId, agentId);
   if (!agent) notFound();
 
-  const [cases, questions, insights] = await Promise.all([attempt(() => client.cases({ agent: agentId })), attempt(() => client.questions(agentId)), attempt(() => client.insights(agentId))]);
-  const labels = statusLabels(cases.ok ? cases.data.items : []);
-  const statusRows = Object.entries(agent.statuses)
-    .sort((a, b) => b[1] - a[1])
-    .map(([s, n]) => ({ status: labelFor(s, labels), [agent.id]: n }));
-  const series = agentSeries([agent], agentsRes.data.items);
-  const open = questions.ok ? questions.data.items.filter((q) => q.status === "open") : [];
-  const base = orgPath(organization.id);
+  const m = agentsMsg[ctx.lang];
+  const c = common[ctx.lang];
+  const f = fmt(ctx.lang);
+  const tabs = TABS.filter((t) => ctx.flags[TAB_FLAG[t]]);
+  const requested = first(sp.tab) as Tab | undefined;
+  // A run link (?run=) without tab opens the runs tab.
+  const tab: Tab | undefined = requested && tabs.includes(requested) ? requested : first(sp.run) && tabs.includes("ejecuciones") ? "ejecuciones" : tabs[0];
+  const base = orgPath(orgId, "agents", agent.id);
+  const canPause = can(ctx.role, ctx.staff, "agents.pause") && ctx.flags["agents.pause"];
+
+  let body: React.ReactNode = null;
+  if (tab === "resumen") {
+    const opps = agent.opportunityId ? await api().listOpportunities(orgId) : [];
+    body = <SummaryTab agent={agent} lang={ctx.lang} orgId={orgId} opportunity={opps.find((o) => o.id === agent.opportunityId)} />;
+  } else if (tab === "ejecuciones") {
+    const statusParam = first(sp.status) as RunStatus | undefined;
+    const status = statusParam && RUN_STATUSES.includes(statusParam) ? statusParam : undefined;
+    const runId = first(sp.run);
+    const [allRuns, selected] = await Promise.all([api().listRuns(orgId, { agentId: agent.id, status, limit: 1000 }), runId ? api().getRun(orgId, runId) : Promise.resolve(null)]);
+    body = <RunsTab orgId={orgId} agent={agent} runs={allRuns.slice(0, 50)} total={allRuns.length} status={status} selected={selected && selected.agentId === agent.id ? selected : null} lang={ctx.lang} />;
+  } else if (tab === "shadow") {
+    const report = await api().getShadowReport(orgId, agent.id);
+    body = <ShadowTab orgId={orgId} agent={agent} report={report} canPromote={can(ctx.role, ctx.staff, "agents.promote")} lang={ctx.lang} />;
+  } else if (tab === "aprendido") {
+    const rules = await api().listRules(orgId, agent.id);
+    body = <RulesList orgId={orgId} rules={rules} canEdit={can(ctx.role, ctx.staff, "rules.edit")} />;
+  } else if (tab === "rendimiento") {
+    const perf = await api().getPerformance(orgId, agent.id);
+    body = <PerformanceTab agent={agent} perf={perf} hourlyRate={ctx.org.hourlyRate} lang={ctx.lang} />;
+  }
 
   return (
-    <>
-      <Link href={`${base}/agents`} className="mb-4 inline-flex items-center gap-1 text-sm text-muted hover:text-brand">
-        <ArrowLeft className="size-4" aria-hidden /> All agents
+    <div>
+      <Link href={orgPath(orgId, "agents")} className="mb-4 inline-flex items-center gap-1.5 text-sm text-muted hover:text-ink">
+        <ArrowLeft className="size-4" aria-hidden />
+        {m.back}
       </Link>
-      <div className="mb-6 flex flex-wrap items-start gap-4">
-        <AgentAvatar agent={agent} size="lg" />
-        <div className="min-w-0 flex-1">
-          <p className="eyebrow mb-1">{agent.category ?? "Agent"}</p>
-          <h1 className="text-3xl font-semibold tracking-[-0.015em]">{agent.name}</h1>
-          <p className="mt-1 max-w-3xl text-muted">{agent.purpose}</p>
+
+      <header className="mb-5 flex flex-wrap items-start justify-between gap-4">
+        <div className="min-w-0">
+          <p className="eyebrow mb-2">{agent.area}</p>
+          <h1 className="font-display text-[1.9rem] font-medium leading-tight tracking-[-0.015em] md:text-[2.25rem]">{agent.name}</h1>
+          <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1.5 text-sm text-muted">
+            <ModeBadge mode={agent.mode} />
+            <span>
+              {m.version} <span className="font-mono text-ink">{agent.version}</span>
+            </span>
+            <span>
+              {m.owner}: <span className="text-ink">{agent.owner}</span>
+            </span>
+            {agent.stats.pendingQuestions > 0 ? (
+              <Link href={`${orgPath(orgId, "questions")}?agent=${agent.id}`} className="inline-flex items-center gap-1 rounded-full bg-signal-soft px-2 py-0.5 text-xs font-semibold text-signal-ink">
+                <CircleHelp className="size-3.5" aria-hidden />
+                {agent.stats.pendingQuestions} {c.nav.questions.toLowerCase()}
+              </Link>
+            ) : null}
+          </div>
         </div>
-        <Button asChild variant="solid" size="sm">
-          <Link href={withParams(`${base}/journeys`, { agent: agent.id })}>
-            View journeys <ArrowRight aria-hidden />
-          </Link>
-        </Button>
-      </div>
+        {ctx.flags["agents.pause"] ? (
+          <div className="flex flex-col items-end gap-1">
+            <PauseAgentButton orgId={orgId} agentId={agent.id} agentName={agent.name} paused={agent.mode === "paused"} disabled={!canPause} />
+            {!canPause ? <span className="text-xs text-muted">{m.noPermissionPause}</span> : null}
+          </div>
+        ) : null}
+      </header>
 
-      <div className="grid grid-cols-2 gap-3 md:gap-4 xl:grid-cols-4">
-        <MetricCard label="Cases" value={agent.counts.cases} href={withParams(`${base}/journeys`, { agent: agent.id })} />
-        <MetricCard label="Open questions" value={agent.counts.questions_open} emphasis="attention" href={withParams(`${base}/inbox`, { agent: agent.id })} />
-        <MetricCard label="Needs review" value={agent.counts.needs_review} emphasis="attention" />
-        <MetricCard label="Review share" value={percent(agent.counts.needs_review, agent.counts.cases)} hint="Flagged ÷ current cases (workload, not accuracy)" />
-      </div>
+      {agent.mode === "paused" && agent.pause ? (
+        <div role="status" className="mb-5 flex items-start gap-3 rounded-md border border-ink/15 bg-ink/5 px-4 py-3">
+          <PauseCircle className="mt-0.5 size-5 shrink-0 text-ink" aria-hidden />
+          <div className="text-sm">
+            <p className="font-semibold text-ink">{m.pausedBanner(agent.pause.by, f.dateTime(agent.pause.at))}</p>
+            <p className="text-ink-2">
+              {m.pausedReason}: {agent.pause.reason}
+            </p>
+          </div>
+        </div>
+      ) : null}
 
-      <div className="mt-6 grid gap-4 xl:grid-cols-3">
-        <Card>
-          <CardHeader>
-            <CardTitle>Purpose &amp; configuration</CardTitle>
-            <CardDescription>As registered by the agent&rsquo;s source.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <dl className="grid grid-cols-[auto_minmax(0,1fr)] gap-x-4 gap-y-2 text-sm">
-              <dt className="text-muted">Agent ID</dt>
-              <dd className="break-all font-mono text-xs leading-5">{agent.id}</dd>
-              <dt className="text-muted">Category</dt>
-              <dd>{agent.category ?? "—"}</dd>
-              <dt className="text-muted">Data source</dt>
-              <dd>{agent.source ? SOURCE_LABELS[agent.source] ?? agent.source : "—"}</dd>
-              <dt className="text-muted">Organization</dt>
-              <dd>{organization.label}</dd>
-            </dl>
-            <h3 className="mb-2 mt-5 font-sans text-sm font-semibold">Capabilities</h3>
-            {agent.capabilities?.length ? (
-              <ul className="flex flex-wrap gap-1.5">
-                {agent.capabilities.map((c) => (
-                  <li key={c}>
-                    <Badge tone="done">{c}</Badge>
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <p className="text-sm text-muted">This agent&rsquo;s source does not report a capability list. Its recorded journeys show what it actually did.</p>
-            )}
-          </CardContent>
-        </Card>
+      {tabs.length > 0 ? (
+        <nav aria-label="Tabs" className="mb-5 flex gap-1 overflow-x-auto border-b border-line">
+          {tabs.map((t) => (
+            <Link
+              key={t}
+              href={`${base}?tab=${t}`}
+              aria-current={t === tab ? "page" : undefined}
+              className={cn("-mb-px whitespace-nowrap border-b-2 px-3 py-2 text-sm font-medium transition-colors", t === tab ? "border-brand text-ink" : "border-transparent text-muted hover:text-ink")}
+            >
+              {m.tabs[t]}
+            </Link>
+          ))}
+        </nav>
+      ) : null}
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Case status</CardTitle>
-            <CardDescription>Current cases by business status.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            {statusRows.length ? (
-              <BarChartCard rows={statusRows} categoryKey="status" categoryLabel="Status" series={series} layout="horizontal-bars" ariaLabel={`Current cases per status for ${agent.name}`} />
-            ) : (
-              <EmptyState title="No cases yet" />
-            )}
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Activity</CardTitle>
-            <CardDescription>Cases by last update, past 14 days (most recent {cases.ok ? cases.data.items.length : 0} cases scanned).</CardDescription>
-          </CardHeader>
-          <CardContent>
-            {cases.ok ? (
-              <BarChartCard rows={activityByDay(cases.data.items, 14)} categoryKey="day" categoryLabel="Day" series={series} ariaLabel={`Cases updated per day for ${agent.name}`} height={200} />
-            ) : (
-              <ErrorState title={cases.error.title} detail={cases.error.detail} />
-            )}
-          </CardContent>
-        </Card>
-      </div>
-
-      <div className="mt-4 grid gap-4 xl:grid-cols-3">
-        <Card className="xl:col-span-2">
-          <CardHeader>
-            <CardTitle>Recent journeys</CardTitle>
-          </CardHeader>
-          <CardContent className="pt-2">
-            {cases.ok ? <CaseList org={organization.id} cases={cases.data.items.slice(0, 10)} showAgent={false} emptyTitle="No cases recorded yet" /> : <ErrorState title={cases.error.title} detail={cases.error.detail} />}
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader>
-            <CardTitle>Waiting for a person</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {open.length ? <QuestionPreviewList org={organization.id} questions={open.slice(0, 5)} more={open.length - 5} agent={agent.id} /> : <EmptyState title="No open questions" />}
-          </CardContent>
-        </Card>
-      </div>
-
-      <Card className="mt-4">
-        <CardHeader>
-          <CardTitle>Quality signals</CardTitle>
-          <CardDescription>{insights.ok ? insights.data.note : "Evidence-check outcomes and question states."}</CardDescription>
-        </CardHeader>
-        <CardContent>
-          {insights.ok ? (
-            <div className="grid gap-6 lg:grid-cols-2">
-              <div>
-                <h3 className="mb-2 font-sans text-sm font-semibold">Evidence-check outcomes</h3>
-                <DispositionChart insights={insights.data} />
-              </div>
-              <div className="flex flex-col gap-4">
-                <div>
-                  <h3 className="mb-2 font-sans text-sm font-semibold">Questions by state</h3>
-                  <QuestionStates insights={insights.data} />
-                </div>
-                <HistoricalEvaluations items={insights.data.historical} />
-              </div>
-            </div>
-          ) : (
-            <ErrorState title={insights.error.title} detail={insights.error.detail} />
-          )}
-        </CardContent>
-      </Card>
-    </>
+      {body}
+    </div>
   );
 }

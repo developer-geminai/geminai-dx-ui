@@ -3,96 +3,109 @@
 @tailwind utilities;
 
 /*
- * GeminAI-DX design tokens.
- * Source of truth: the public stylesheet of https://www.geminaidx.com/ (captured 2026-11-02).
- *   --paper #fff / --paper-alt #f4f4f2 / --ink #15181a / --muted #5e6568 / --line #e5e6e3
- *   --brand #0e6b63 / --brand-strong #0a4f49 / --brand-soft #e2f0ed
- *   --signal #c96a1d / --signal-soft #fbeada / --band-* (dark hero band)
- * Values are stored as RGB triplets so Tailwind can apply alpha (rgb(var(--x) / a)).
- * Dashboard-only additions (not on the marketing site): --danger*, --signal-ink, --chart-*.
- * The categorical chart series (--chart-1..4, teal first) were validated with the dataviz
- * palette checker (lightness band, chroma, CVD and normal-vision separation, contrast) on
- * both the light (#fff) and dark (#1a1d1b) surfaces. A 5th+ series folds into --chart-other.
+ * GeminAI Dx brand tokens — same palette as the CRM and the contract portal (/contract).
+ *   ink #010D13 · green #139279 · forest #001C17 · amber ONLY for "requires attention".
+ *   Newsreader (display) + IBM Plex Sans / Mono.
+ * Values are RGB triplets so Tailwind can apply alpha: rgb(var(--x) / a).
+ * Chart series 1–4 validated with the dataviz palette checker (light #FCFCFB, dark #0C1815).
+ * --brand-ink is the green darkened for small text on white (WCAG AA); --brand is for fills.
  */
 @layer base {
   :root {
-    --paper: 255 255 255;
-    --paper-alt: 244 244 242;
+    --paper: 245 247 244;
+    --paper-alt: 236 240 238;
     --surface: 255 255 255;
-    --ink: 21 24 26;
-    --muted: 94 101 104;
-    --line: 229 230 227;
-    --brand: 14 107 99;
-    --brand-strong: 10 79 73;
-    --brand-soft: 226 240 237;
-    --on-brand: 245 246 243;
-    --signal: 201 106 29;
-    --signal-soft: 251 234 218;
-    --signal-ink: 154 79 18;
-    --danger: 180 35 24;
-    --danger-soft: 253 232 230;
-    --band-bg: 11 20 20;
-    --band-bg-2: 16 28 27;
-    --band-fg: 245 246 243;
-    --band-muted: 147 162 159;
-    --band-line: 34 50 49;
-    --band-brand: 63 192 178;
-    --band-signal: 240 160 80;
-    --chart-1: 0 137 123;
-    --chart-2: 217 102 26;
-    --chart-3: 47 111 208;
-    --chart-4: 163 71 159;
-    --chart-other: 147 162 159;
+    --ink: 1 13 19;
+    --ink-2: 34 49 58;
+    --muted: 90 106 112;
+    --faint: 138 152 156;
+    --line: 223 230 226;
+    --brand: 19 146 121;
+    --brand-strong: 14 117 99;
+    --brand-ink: 14 117 99;
+    --brand-soft: 228 244 239;
+    --brand-line: 185 226 214;
+    --on-brand: 255 255 255;
+    --forest: 0 28 23;
+    --forest-2: 10 58 47;
+    --signal: 183 121 31;
+    --signal-soft: 252 243 226;
+    --signal-line: 238 217 176;
+    --signal-ink: 138 90 18;
+    --danger: 179 38 30;
+    --danger-soft: 251 234 234;
+    --band-bg: 0 28 23;
+    --band-bg-2: 10 58 47;
+    --band-fg: 240 245 242;
+    --band-muted: 150 175 167;
+    --band-line: 22 60 50;
+    --band-brand: 72 199 168;
+    --band-signal: 240 176 80;
+    --chart-1: 19 146 121;
+    --chart-2: 47 111 208;
+    --chart-3: 163 71 159;
+    --chart-4: 107 142 35;
+    --chart-other: 150 165 160;
     color-scheme: light;
   }
 
   @media (prefers-color-scheme: dark) {
     :root:not([data-theme="light"]) {
-      --paper: 16 18 17;
-      --paper-alt: 22 25 23;
-      --surface: 26 29 27;
-      --ink: 237 238 236;
-      --muted: 152 160 155;
-      --line: 42 46 43;
-      --brand: 63 192 178;
-      --brand-strong: 99 212 198;
-      --brand-soft: 22 48 44;
-      --on-brand: 11 20 20;
-      --signal: 231 160 92;
-      --signal-soft: 51 34 21;
-      --signal-ink: 231 160 92;
+      --paper: 6 16 14;
+      --paper-alt: 16 30 27;
+      --surface: 12 24 21;
+      --ink: 236 242 239;
+      --ink-2: 205 215 211;
+      --muted: 148 164 159;
+      --faint: 110 126 121;
+      --line: 32 48 44;
+      --brand: 40 176 146;
+      --brand-strong: 90 210 182;
+      --brand-ink: 90 210 182;
+      --brand-soft: 14 48 41;
+      --brand-line: 24 80 68;
+      --on-brand: 0 28 23;
+      --signal: 230 170 80;
+      --signal-soft: 52 38 16;
+      --signal-line: 92 66 28;
+      --signal-ink: 236 180 96;
       --danger: 240 119 107;
       --danger-soft: 58 29 26;
-      --chart-1: 31 168 152;
-      --chart-2: 214 114 42;
-      --chart-3: 79 138 230;
-      --chart-4: 191 95 184;
-      --chart-other: 120 128 124;
+      --chart-1: 30 158 131;
+      --chart-2: 91 139 224;
+      --chart-3: 182 99 178;
+      --chart-4: 127 154 46;
+      --chart-other: 110 126 121;
       color-scheme: dark;
     }
   }
 
   :root[data-theme="dark"] {
-    --paper: 16 18 17;
-    --paper-alt: 22 25 23;
-    --surface: 26 29 27;
-    --ink: 237 238 236;
-    --muted: 152 160 155;
-    --line: 42 46 43;
-    --brand: 63 192 178;
-    --brand-strong: 99 212 198;
-    --brand-soft: 22 48 44;
-    --on-brand: 11 20 20;
-    --signal: 231 160 92;
-    --signal-soft: 51 34 21;
-    --signal-ink: 231 160 92;
+    --paper: 6 16 14;
+    --paper-alt: 16 30 27;
+    --surface: 12 24 21;
+    --ink: 236 242 239;
+    --ink-2: 205 215 211;
+    --muted: 148 164 159;
+    --faint: 110 126 121;
+    --line: 32 48 44;
+    --brand: 40 176 146;
+    --brand-strong: 90 210 182;
+    --brand-ink: 90 210 182;
+    --brand-soft: 14 48 41;
+    --brand-line: 24 80 68;
+    --on-brand: 0 28 23;
+    --signal: 230 170 80;
+    --signal-soft: 52 38 16;
+    --signal-line: 92 66 28;
+    --signal-ink: 236 180 96;
     --danger: 240 119 107;
     --danger-soft: 58 29 26;
-    --chart-1: 31 168 152;
-    --chart-2: 214 114 42;
-    --chart-3: 79 138 230;
-    --chart-4: 191 95 184;
-    --chart-other: 120 128 124;
+    --chart-1: 30 158 131;
+    --chart-2: 91 139 224;
+    --chart-3: 182 99 178;
+    --chart-4: 127 154 46;
+    --chart-other: 110 126 121;
     color-scheme: dark;
   }
 
@@ -101,7 +114,7 @@
   }
 
   body {
-    @apply bg-paper-alt font-sans text-ink antialiased;
+    @apply bg-paper font-sans text-ink antialiased;
     font-size: 15px;
     line-height: 1.5;
   }
@@ -130,18 +143,64 @@
 }
 
 @layer components {
-  /* Mono uppercase label with a leading dot, as used for section eyebrows on geminaidx.com. */
+  /* Mono uppercase label with a leading dot (section eyebrows, same as the contract portal). */
   .eyebrow {
-    @apply inline-flex items-center gap-2 font-mono text-[0.7rem] uppercase tracking-eyebrow text-brand;
+    @apply inline-flex items-center gap-2 font-mono text-[0.7rem] uppercase tracking-eyebrow text-brand-ink;
   }
   .eyebrow::before {
     content: "";
     @apply h-1.5 w-1.5 rounded-full bg-current;
+  }
+  .label-mono {
+    @apply font-mono text-[0.68rem] uppercase tracking-eyebrow text-muted;
   }
   .tabular {
     font-variant-numeric: tabular-nums;
   }
   .skip-link {
     @apply sr-only focus:not-sr-only focus:fixed focus:left-3 focus:top-3 focus:z-50 focus:rounded-sm focus:bg-brand focus:px-3 focus:py-2 focus:text-brand-on;
+  }
+  /* Simple data table used across the portal. */
+  .data-table {
+    @apply w-full border-collapse text-sm;
+  }
+  .data-table th {
+    @apply whitespace-nowrap border-b border-line px-3 py-2 text-left font-mono text-[0.66rem] font-normal uppercase tracking-eyebrow text-muted;
+  }
+  .data-table td {
+    @apply border-b border-line px-3 py-2.5 align-middle;
+  }
+  .data-table tbody tr:last-child td {
+    @apply border-b-0;
+  }
+  .data-table tbody tr:hover td {
+    @apply bg-paper/60;
+  }
+}
+
+/* Print view (audit "Exportar PDF"): only the main content, no chrome. */
+@media print {
+  aside,
+  header,
+  nav,
+  .no-print,
+  .skip-link {
+    display: none !important;
+  }
+  body {
+    background: #fff !important;
+    color: #010d13 !important;
+  }
+  body > div {
+    display: block !important;
+  }
+  main {
+    max-width: none !important;
+    padding: 0 !important;
+  }
+  .data-table td,
+  .data-table th {
+    font-size: 10px;
+    padding: 4px 6px;
   }
 }

@@ -10,7 +10,7 @@ export function CardHeader({ className, ...props }: React.HTMLAttributes<HTMLDiv
 }
 
 export function CardTitle({ className, as: Tag = "h2", ...props }: React.HTMLAttributes<HTMLHeadingElement> & { as?: "h2" | "h3" }) {
-  return <Tag className={cn("font-display text-lg font-semibold leading-tight text-ink", className)} {...props} />;
+  return <Tag className={cn("font-display text-lg font-medium leading-tight text-ink", className)} {...props} />;
 }
 
 export function CardDescription({ className, ...props }: React.HTMLAttributes<HTMLParagraphElement>) {

@@ -12,7 +12,9 @@ export const buttonVariants = cva(
         solid: "bg-brand text-brand-on hover:bg-brand-strong",
         line: "border border-line bg-transparent text-ink hover:border-muted",
         ghost: "text-muted hover:bg-paper-alt hover:text-ink",
-        soft: "bg-brand-soft text-brand hover:bg-brand-soft/70",
+        soft: "bg-brand-soft text-brand-ink hover:bg-brand-soft/70",
+        danger: "border border-danger/40 bg-surface text-danger hover:bg-danger-soft",
+        forest: "bg-forest text-band-fg hover:bg-forest-2",
       },
       size: {
         sm: "h-8 px-3 text-[0.8rem]",

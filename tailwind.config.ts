@@ -3,8 +3,8 @@ import animate from "tailwindcss-animate";
 
 /**
  * Every colour resolves to a CSS custom property defined in src/app/globals.css.
- * Token names and values mirror https://www.geminaidx.com/ (--paper, --ink, --brand, --signal…),
- * plus a few dashboard-only semantic tokens (danger, chart series) derived from the same palette.
+ * Palette = GeminAI Dx brand (CRM + contract portal): ink #010D13, green #139279, forest #001C17,
+ * amber (signal) reserved for "requires attention".
  */
 const token = (name: string) => `rgb(var(--${name}) / <alpha-value>)`;
 
@@ -17,16 +17,20 @@ const config: Config = {
       colors: {
         paper: { DEFAULT: token("paper"), alt: token("paper-alt") },
         surface: token("surface"),
-        ink: token("ink"),
+        ink: { DEFAULT: token("ink"), 2: token("ink-2") },
         muted: token("muted"),
+        faint: token("faint"),
         line: token("line"),
+        forest: { DEFAULT: token("forest"), 2: token("forest-2") },
         brand: {
           DEFAULT: token("brand"),
           strong: token("brand-strong"),
           soft: token("brand-soft"),
+          line: token("brand-line"),
+          ink: token("brand-ink"),
           on: token("on-brand"),
         },
-        signal: { DEFAULT: token("signal"), soft: token("signal-soft") },
+        signal: { DEFAULT: token("signal"), soft: token("signal-soft"), line: token("signal-line"), ink: token("signal-ink") },
         danger: { DEFAULT: token("danger"), soft: token("danger-soft") },
         band: {
           DEFAULT: token("band-bg"),
@@ -45,14 +49,14 @@ const config: Config = {
         mono: ["var(--font-mono)", "SFMono-Regular", "Consolas", "monospace"],
       },
       borderRadius: {
-        // Site uses 6px buttons, 9–10px controls, 14–16px cards.
+        // Contract portal: 6px buttons, 9px controls, 14px cards.
         sm: "6px",
-        md: "10px",
+        md: "9px",
         lg: "14px",
         xl: "16px",
       },
       boxShadow: {
-        card: "0 1px 0 rgb(0 0 0 / 0.02), 0 18px 48px rgb(0 0 0 / 0.08)",
+        card: "0 1px 2px rgb(1 13 19 / 0.04), 0 8px 28px rgb(1 13 19 / 0.06)",
         pop: "0 14px 30px -10px rgb(0 0 0 / 0.45)",
         focus: "0 0 0 3px rgb(var(--brand-soft))",
       },

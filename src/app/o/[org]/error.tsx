@@ -1,15 +1,17 @@
 "use client";
 import { ErrorState } from "@/components/ui/states";
 import { Button } from "@/components/ui/button";
+import { useLang } from "@/lib/i18n/client";
+import { common } from "@/lib/i18n/common";
 
 export default function OrgError({ reset }: { error: Error & { digest?: string }; reset: () => void }) {
+  const m = common[useLang()];
   return (
     <ErrorState
-      title="This page could not be displayed"
-      detail="An unexpected error occurred while rendering. No data was changed. Details are in the Control Center server log."
+      title={m.errorTitle}
       action={
         <Button variant="line" size="sm" onClick={reset}>
-          Try again
+          {m.retry}
         </Button>
       }
     />

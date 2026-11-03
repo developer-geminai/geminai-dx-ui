@@ -1,15 +1,12 @@
 import { NextResponse, type NextRequest } from "next/server";
 
 /**
- * Cheap edge gate: no session cookie → login page. The cookie's signature, expiry and the
- * operator's organization grants are verified in the Node runtime on every page and API read
- * (lib/server/session.ts), so a forged cookie gets no further than this redirect target.
+ * Cheap edge gate: no session cookie → login. The cookie's signature and expiry are verified in
+ * the Node runtime on every page (lib/server/session.ts). /transparency/* is public on purpose:
+ * monitored employees have no account and open it from the tracker app.
  */
 export function middleware(req: NextRequest) {
-  if (!req.cookies.get("gdx_cc_session")) {
-    if (req.nextUrl.pathname.startsWith("/api/")) {
-      return NextResponse.json({ error: "Sign in required" }, { status: 401 });
-    }
+  if (!req.cookies.get("gdx_portal_session")) {
     const url = req.nextUrl.clone();
     url.pathname = "/login";
     url.search = "";
@@ -19,5 +16,5 @@ export function middleware(req: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/((?!login|_next/static|_next/image|brand/|icon.png|favicon.ico).*)"],
+  matcher: ["/((?!login|transparency|_next/static|_next/image|brand/|icon.png|favicon.ico).*)"],
 };
