@@ -1,0 +1,87 @@
+{
+ "items": [
+  {
+   "id": "QUESTION-DEMO-0",
+   "case_id": "CASE-DEMO-024",
+   "status": "open",
+   "title": "Which of the two bookings should this document be associated with?",
+   "text": "Which of the two bookings should this document be associated with?",
+   "fields_count": 1,
+   "option_count": 2,
+   "fields": [
+    {
+     "kind": "candidate_reference",
+     "path": "/requests/0/reference"
+    }
+   ],
+   "options": [
+    {
+     "option_id": "1",
+     "label": "Booking BK-DEMO-311",
+     "id": "1"
+    },
+    {
+     "option_id": "2",
+     "label": "Booking BK-DEMO-312",
+     "id": "2"
+    }
+   ],
+   "request_path": "/requests/0/reference",
+   "state_version": 1,
+   "current_case_version": 1,
+   "case_status": "Waiting for an answer",
+   "origin_messages": [
+    "M-DEMO-1"
+   ],
+   "source_subject": "Clarify which booking is associated with a container",
+   "source_sender": null,
+   "source_received_at": null,
+   "source_message_id": "M-DEMO-1",
+   "created_at": 1793657609.5693564,
+   "expires_at": 1793830409.5693564,
+   "agent_id": "transport-operations",
+   "agent_name": "Transport coordinator"
+  },
+  {
+   "id": "FIN-DEMO-018-Q",
+   "case_id": "FIN-DEMO-018",
+   "status": "open",
+   "title": "Can we accept the additional 45 EUR on the invoice?",
+   "source_subject": "Invoice INV-742",
+   "case_status": "Waiting for an answer",
+   "text": "Can we accept the additional 45 EUR on the invoice?",
+   "options": [
+    {
+     "id": "1",
+     "label": "Approve line"
+    },
+    {
+     "id": "2",
+     "label": "Request a corrected invoice"
+    }
+   ],
+   "option_count": 2,
+   "fields_count": 0,
+   "created_at": "2026-11-02T22:03:29.624512+00:00",
+   "expires_at": "2026-11-03T22:03:29.624512+00:00",
+   "agent_id": "invoice-reviewer",
+   "agent_name": "Invoice reviewer"
+  },
+  {
+   "id": "SUP-DEMO-043-Q",
+   "case_id": "SUP-DEMO-043",
+   "status": "open",
+   "title": "Please attach the purchase receipt or provide the date.",
+   "source_subject": "Warranty question",
+   "case_status": "Waiting for an answer",
+   "text": "Please attach the purchase receipt or provide the date.",
+   "options": [],
+   "option_count": 0,
+   "fields_count": 0,
+   "created_at": "2026-11-02T21:03:29.624512+00:00",
+   "expires_at": "2026-11-03T21:03:29.624512+00:00",
+   "agent_id": "customer-support",
+   "agent_name": "Customer support"
+  }
+ ]
+}

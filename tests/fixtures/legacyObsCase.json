@@ -1,0 +1,185 @@
+{
+ "id": "CASE-DEMO-022",
+ "title": "Check shipment documents for a booking",
+ "status": "evidence_required",
+ "status_label": "More evidence needed",
+ "status_description": "The available source information is not sufficient to confirm the result.",
+ "tone": "attention",
+ "updated_at": "2026-11-02T21:48:29.569356+00:00",
+ "version": 1,
+ "mode": "shadow",
+ "effects_executed": false,
+ "execution_receipt": {},
+ "request": {
+  "channel": "email",
+  "subject": "Verify shipment documents",
+  "body": "Documents for booking BK-DEMO-305 were sent. Please confirm receipt.",
+  "message_id": "M-DEMO-3",
+  "body_sha256": "24d6fc14237b3ea8d72a676c46256b8124c891269ea16b3428a725cb88d8cf24",
+  "metadata": {},
+  "attachments": [],
+  "actions": [
+   {
+    "action": "check",
+    "property": "shipment documents",
+    "reference_type": "booking",
+    "reference_value": "BK-DEMO-305"
+   }
+  ]
+ },
+ "steps": [
+  {
+   "id": "arrived",
+   "title": "A business message was received",
+   "explanation": "The message arrived by email.",
+   "tone": "done",
+   "based_on": "Original inbound case"
+  },
+  {
+   "id": "understood",
+   "title": "The agent interpreted the request",
+   "explanation": "The message was interpreted as a request to check shipment documents for a booking.",
+   "tone": "done",
+   "based_on": "Saved requested work"
+  },
+  {
+   "id": "identity",
+   "title": "A shipment candidate was identified",
+   "explanation": "The saved identity assessment recorded a candidate. Other evidence must still be checked.",
+   "tone": "done",
+   "based_on": "Recorded identity assessment"
+  },
+  {
+   "id": "compared",
+   "title": "The agent compared the reported information",
+   "explanation": "1 comparison(s) are saved; 1 still need follow-up. Open the facts to see why each is unresolved.",
+   "tone": "attention",
+   "based_on": "Current observation comparison records"
+  },
+  {
+   "id": "decision",
+   "title": "The agent recorded a decision",
+   "explanation": "The available source information is not sufficient to confirm the result.",
+   "tone": "attention",
+   "based_on": "Saved decision and case status"
+  },
+  {
+   "id": "safety",
+   "title": "No change was made to ShipControl",
+   "explanation": "This saved assessment did not execute a database update.",
+   "tone": "neutral",
+   "based_on": "Saved execution contract"
+  }
+ ],
+ "questions": [],
+ "open_question_count": 0,
+ "interpretation": {
+  "requests": [
+   {
+    "intent": "read",
+    "reference": {
+     "kind": "booking",
+     "value": "BK-DEMO-305"
+    },
+    "fact": {
+     "property": "attached_documents"
+    },
+    "value": null
+   }
+  ],
+  "summary": "Verify shipment documents"
+ },
+ "saved_decision": {
+  "reason_codes": [
+   "missing_authoritative_evidence"
+  ],
+  "metadata": {
+   "request_pipeline": {
+    "identity_resolution": {
+     "records": [
+      {
+       "status": "resolved",
+       "candidate_count": 1,
+       "search_complete": true
+      }
+     ]
+    }
+   }
+  }
+ },
+ "answer_history": [],
+ "observations": [
+  {
+   "id": "FACT-CASE-DEMO-022",
+   "title": "Evidence is insufficient",
+   "status_label": "Evidence is insufficient",
+   "explanation": "The saved evidence is insufficient to verify reported detail.",
+   "source_label": "ShipControl",
+   "incoming_value_label": "Email value",
+   "source_quote_label": "Email evidence",
+   "tone": "attention",
+   "reason": "insufficient_evidence",
+   "reason_code": null,
+   "pending": true,
+   "verified": false,
+   "property": null,
+   "property_label": "Reported detail",
+   "reference_label": "No operation reference extracted",
+   "reference": {},
+   "reported_display": "No value extracted",
+   "database_display": "No comparable value established",
+   "evidence_quote": null,
+   "evidence_scope": "Source scope not recorded",
+   "evidence_valid": false,
+   "assertion_label": "Assertion type not recorded",
+   "conditions": [],
+   "ambiguities": [],
+   "row_key": null,
+   "related_references": [],
+   "fact_at": null,
+   "snapshot_id": "DEMO-SNAPSHOT",
+   "snapshot_at": null,
+   "concept": null,
+   "saved_at": "2026-11-02T21:48:29.569356+00:00",
+   "check_details": {
+    "disposition": "insufficient_evidence",
+    "snapshot": {
+     "snapshot_id": "DEMO-SNAPSHOT"
+    }
+   }
+  }
+ ],
+ "pending_observations": 1,
+ "history": [
+  {
+   "id": 6,
+   "at": "2026-11-02T21:46:59.569356+00:00",
+   "title": "A message was received",
+   "kind": "human_inbound"
+  },
+  {
+   "id": 7,
+   "at": "2026-11-02T21:47:54.569356+00:00",
+   "title": "The agent recorded an assessment",
+   "kind": "tool_decision"
+  }
+ ],
+ "next_action": "Check the source data or provide the missing evidence, then re-evaluate.",
+ "technical": {
+  "reason_codes": [
+   "missing_authoritative_evidence"
+  ],
+  "audit_events": 2,
+  "case_revision": 1,
+  "source_snapshot": null
+ },
+ "narration_disclaimer": "Business summary reconstructed from saved facts and decisions; not the model's private reasoning.",
+ "outcome": {
+  "label": "More evidence needed",
+  "detail": "The available source information is not sufficient to confirm the result.",
+  "effects_status": "not_executed"
+ },
+ "agent_id": "transport-operations",
+ "agent_name": "Transport coordinator",
+ "agent_purpose": "Interprets shipment requests and compares available transport records"
+}

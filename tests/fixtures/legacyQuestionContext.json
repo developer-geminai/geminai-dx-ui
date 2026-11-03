@@ -1,0 +1,297 @@
+{
+ "contract": "human-review-context/1",
+ "organization_id": "DEMO-WORKSPACE",
+ "agent_id": "transport-operations",
+ "case_id": "CASE-DEMO-024",
+ "question_id": "QUESTION-DEMO-0",
+ "loaded_at": "2026-11-02T22:23:48.055567+00:00",
+ "question": {
+  "id": "QUESTION-DEMO-0",
+  "case_id": "CASE-DEMO-024",
+  "status": "open",
+  "title": "Which of the two bookings should this document be associated with?",
+  "text": "Which of the two bookings should this document be associated with?",
+  "fields_count": 1,
+  "option_count": 2,
+  "fields": [
+   {
+    "kind": "candidate_reference",
+    "path": "/requests/0/reference"
+   }
+  ],
+  "options": [
+   {
+    "option_id": "1",
+    "label": "Booking BK-DEMO-311",
+    "id": "1"
+   },
+   {
+    "option_id": "2",
+    "label": "Booking BK-DEMO-312",
+    "id": "2"
+   }
+  ],
+  "request_path": "/requests/0/reference",
+  "state_version": 1,
+  "current_case_version": 1,
+  "case_status": "Waiting for an answer",
+  "origin_messages": [
+   "M-DEMO-1"
+  ],
+  "source_subject": "Clarify which booking is associated with a container",
+  "source_sender": null,
+  "source_received_at": null,
+  "source_message_id": "M-DEMO-1",
+  "created_at": "2026-11-02T22:13:29.569356+00:00",
+  "expires_at": "2026-11-04T22:13:29.569356+00:00"
+ },
+ "case": {
+  "id": "CASE-DEMO-024",
+  "title": "Check container number for a shipment",
+  "status": "waiting",
+  "status_label": "Waiting for an answer",
+  "status_description": "A question needs to be answered before this case can continue.",
+  "tone": "attention",
+  "updated_at": "2026-11-02T22:13:29.569356+00:00",
+  "version": 1,
+  "mode": "shadow",
+  "effects_executed": false,
+  "execution_receipt": {},
+  "request": {
+   "channel": "email",
+   "subject": "Clarify which booking is associated with a container",
+   "body": "¿Puedes confirmar a qué booking corresponde este contenedor?",
+   "message_id": "M-DEMO-1",
+   "body_sha256": "1ab52c2d1564a3ddba9482b496aa756a274b4eb34e433cca85a4e0d2ddd4f52e",
+   "metadata": {},
+   "attachments": [],
+   "actions": [
+    {
+     "action": "check",
+     "property": "container number",
+     "reference_type": "shipment",
+     "reference_value": null
+    }
+   ]
+  },
+  "steps": [
+   {
+    "id": "arrived",
+    "title": "A business message was received",
+    "explanation": "The message arrived by email.",
+    "tone": "done",
+    "based_on": "Original inbound case"
+   },
+   {
+    "id": "understood",
+    "title": "The agent interpreted the request",
+    "explanation": "The message was interpreted as a request to check container number for a shipment.",
+    "tone": "done",
+    "based_on": "Saved requested work"
+   },
+   {
+    "id": "identity",
+    "title": "More than one shipment may match",
+    "explanation": "The available identifiers do not uniquely identify the target. The agent must not guess.",
+    "tone": "attention",
+    "based_on": "Recorded identity assessment"
+   },
+   {
+    "id": "capability",
+    "title": "A business detail needs clarification",
+    "explanation": "The request cannot be mapped to an approved check without more context.",
+    "tone": "attention",
+    "based_on": "Recorded capability assessment"
+   },
+   {
+    "id": "decision",
+    "title": "The agent recorded a decision",
+    "explanation": "A question needs to be answered before this case can continue.",
+    "tone": "attention",
+    "based_on": "Saved decision and case status"
+   },
+   {
+    "id": "question:QUESTION-DEMO-0",
+    "title": "It needs a specific answer",
+    "explanation": "Which of the two bookings should this document be associated with? The case cannot safely proceed until this is resolved.",
+    "tone": "attention",
+    "based_on": "Persistent question"
+   },
+   {
+    "id": "safety",
+    "title": "No change was made to ShipControl",
+    "explanation": "This saved assessment did not execute a database update.",
+    "tone": "neutral",
+    "based_on": "Saved execution contract"
+   }
+  ],
+  "questions": [
+   {
+    "id": "QUESTION-DEMO-0",
+    "case_id": "CASE-DEMO-024",
+    "status": "open",
+    "title": "Which of the two bookings should this document be associated with?",
+    "text": "Which of the two bookings should this document be associated with?",
+    "fields_count": 1,
+    "option_count": 2,
+    "fields": [
+     {
+      "kind": "candidate_reference",
+      "path": "/requests/0/reference"
+     }
+    ],
+    "options": [
+     {
+      "option_id": "1",
+      "label": "Booking BK-DEMO-311",
+      "id": "1"
+     },
+     {
+      "option_id": "2",
+      "label": "Booking BK-DEMO-312",
+      "id": "2"
+     }
+    ],
+    "request_path": "/requests/0/reference",
+    "state_version": 1,
+    "current_case_version": 1,
+    "case_status": "Waiting for an answer",
+    "origin_messages": [
+     "M-DEMO-1"
+    ],
+    "source_subject": "Clarify which booking is associated with a container",
+    "source_sender": null,
+    "source_received_at": null,
+    "source_message_id": "M-DEMO-1",
+    "created_at": "2026-11-02T22:13:29.569356+00:00",
+    "expires_at": "2026-11-04T22:13:29.569356+00:00"
+   }
+  ],
+  "open_question_count": 1,
+  "interpretation": {
+   "requests": [
+    {
+     "intent": "read",
+     "reference": null,
+     "fact": {
+      "property": "container_number"
+     },
+     "value": null
+    }
+   ],
+   "summary": "Clarify which booking is associated with a container"
+  },
+  "saved_decision": {
+   "reason_codes": [
+    "identity:ambiguous"
+   ],
+   "metadata": {
+    "request_pipeline": {
+     "identity_resolution": {
+      "records": [
+       {
+        "status": "ambiguous",
+        "candidate_count": 2,
+        "search_complete": true
+       }
+      ]
+     },
+     "capability_resolution": {
+      "records": [
+       {
+        "status": "clarification_required"
+       }
+      ]
+     }
+    }
+   }
+  },
+  "answer_history": [],
+  "observations": [],
+  "pending_observations": 0,
+  "history": [
+   {
+    "id": 1,
+    "at": "2026-11-02T22:11:59.569356+00:00",
+    "title": "A message was received",
+    "kind": "human_inbound"
+   },
+   {
+    "id": 2,
+    "at": "2026-11-02T22:12:54.569356+00:00",
+    "title": "The agent recorded an assessment",
+    "kind": "tool_decision"
+   },
+   {
+    "id": 3,
+    "at": "2026-11-02T22:13:29.569356+00:00",
+    "title": "A clarification was prepared",
+    "kind": "agent_question"
+   }
+  ],
+  "next_action": "Answer the open question so the agent can reassess the case.",
+  "technical": {
+   "reason_codes": [
+    "identity:ambiguous"
+   ],
+   "audit_events": 3,
+   "case_revision": 1,
+   "source_snapshot": null
+  },
+  "narration_disclaimer": "Business summary reconstructed from saved facts and decisions; not the model's private reasoning.",
+  "outcome": {
+   "label": "Waiting for an answer",
+   "detail": "A question needs to be answered before this case can continue.",
+   "effects_status": "not_executed"
+  },
+  "agent_id": "transport-operations",
+  "agent_name": "Transport coordinator",
+  "agent_purpose": "Interprets shipment requests and compares available transport records"
+ },
+ "affected_requests": [
+  {
+   "index": 0,
+   "path": "/requests/0",
+   "request": {
+    "intent": "read",
+    "reference": null,
+    "fact": {
+     "property": "container_number"
+    },
+    "value": null
+   },
+   "intent": "read",
+   "property": "container_number",
+   "source_phrase": null,
+   "reference": null,
+   "value": null,
+   "source_quote": null,
+   "source_quote_scope": null,
+   "fields": [
+    {
+     "kind": "candidate_reference",
+     "path": "/requests/0/reference"
+    }
+   ]
+  }
+ ],
+ "requested_fields": [
+  {
+   "kind": "candidate_reference",
+   "path": "/requests/0/reference",
+   "current_value": null,
+   "source_phrase": null
+  }
+ ],
+ "focused_observations": [],
+ "version_check": {
+  "question_state_version": 1,
+  "case_version": 1,
+  "changed_since_question": false
+ },
+ "availability": {
+  "missing": [],
+  "request_link_method": "exact saved request_path/field paths; no first-request fallback"
+ },
+ "reply_submission_enabled": false
+}

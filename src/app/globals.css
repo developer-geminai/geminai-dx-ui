@@ -1,0 +1,147 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/*
+ * GeminAI-DX design tokens.
+ * Source of truth: the public stylesheet of https://www.geminaidx.com/ (captured 2026-11-02).
+ *   --paper #fff / --paper-alt #f4f4f2 / --ink #15181a / --muted #5e6568 / --line #e5e6e3
+ *   --brand #0e6b63 / --brand-strong #0a4f49 / --brand-soft #e2f0ed
+ *   --signal #c96a1d / --signal-soft #fbeada / --band-* (dark hero band)
+ * Values are stored as RGB triplets so Tailwind can apply alpha (rgb(var(--x) / a)).
+ * Dashboard-only additions (not on the marketing site): --danger*, --signal-ink, --chart-*.
+ * The categorical chart series (--chart-1..4, teal first) were validated with the dataviz
+ * palette checker (lightness band, chroma, CVD and normal-vision separation, contrast) on
+ * both the light (#fff) and dark (#1a1d1b) surfaces. A 5th+ series folds into --chart-other.
+ */
+@layer base {
+  :root {
+    --paper: 255 255 255;
+    --paper-alt: 244 244 242;
+    --surface: 255 255 255;
+    --ink: 21 24 26;
+    --muted: 94 101 104;
+    --line: 229 230 227;
+    --brand: 14 107 99;
+    --brand-strong: 10 79 73;
+    --brand-soft: 226 240 237;
+    --on-brand: 245 246 243;
+    --signal: 201 106 29;
+    --signal-soft: 251 234 218;
+    --signal-ink: 154 79 18;
+    --danger: 180 35 24;
+    --danger-soft: 253 232 230;
+    --band-bg: 11 20 20;
+    --band-bg-2: 16 28 27;
+    --band-fg: 245 246 243;
+    --band-muted: 147 162 159;
+    --band-line: 34 50 49;
+    --band-brand: 63 192 178;
+    --band-signal: 240 160 80;
+    --chart-1: 0 137 123;
+    --chart-2: 217 102 26;
+    --chart-3: 47 111 208;
+    --chart-4: 163 71 159;
+    --chart-other: 147 162 159;
+    color-scheme: light;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --paper: 16 18 17;
+      --paper-alt: 22 25 23;
+      --surface: 26 29 27;
+      --ink: 237 238 236;
+      --muted: 152 160 155;
+      --line: 42 46 43;
+      --brand: 63 192 178;
+      --brand-strong: 99 212 198;
+      --brand-soft: 22 48 44;
+      --on-brand: 11 20 20;
+      --signal: 231 160 92;
+      --signal-soft: 51 34 21;
+      --signal-ink: 231 160 92;
+      --danger: 240 119 107;
+      --danger-soft: 58 29 26;
+      --chart-1: 31 168 152;
+      --chart-2: 214 114 42;
+      --chart-3: 79 138 230;
+      --chart-4: 191 95 184;
+      --chart-other: 120 128 124;
+      color-scheme: dark;
+    }
+  }
+
+  :root[data-theme="dark"] {
+    --paper: 16 18 17;
+    --paper-alt: 22 25 23;
+    --surface: 26 29 27;
+    --ink: 237 238 236;
+    --muted: 152 160 155;
+    --line: 42 46 43;
+    --brand: 63 192 178;
+    --brand-strong: 99 212 198;
+    --brand-soft: 22 48 44;
+    --on-brand: 11 20 20;
+    --signal: 231 160 92;
+    --signal-soft: 51 34 21;
+    --signal-ink: 231 160 92;
+    --danger: 240 119 107;
+    --danger-soft: 58 29 26;
+    --chart-1: 31 168 152;
+    --chart-2: 214 114 42;
+    --chart-3: 79 138 230;
+    --chart-4: 191 95 184;
+    --chart-other: 120 128 124;
+    color-scheme: dark;
+  }
+
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    @apply bg-paper-alt font-sans text-ink antialiased;
+    font-size: 15px;
+    line-height: 1.5;
+  }
+
+  h1,
+  h2,
+  h3 {
+    @apply font-display;
+    text-wrap: balance;
+  }
+
+  :focus-visible {
+    outline: 2px solid rgb(var(--brand));
+    outline-offset: 3px;
+    border-radius: 2px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+}
+
+@layer components {
+  /* Mono uppercase label with a leading dot, as used for section eyebrows on geminaidx.com. */
+  .eyebrow {
+    @apply inline-flex items-center gap-2 font-mono text-[0.7rem] uppercase tracking-eyebrow text-brand;
+  }
+  .eyebrow::before {
+    content: "";
+    @apply h-1.5 w-1.5 rounded-full bg-current;
+  }
+  .tabular {
+    font-variant-numeric: tabular-nums;
+  }
+  .skip-link {
+    @apply sr-only focus:not-sr-only focus:fixed focus:left-3 focus:top-3 focus:z-50 focus:rounded-sm focus:bg-brand focus:px-3 focus:py-2 focus:text-brand-on;
+  }
+}

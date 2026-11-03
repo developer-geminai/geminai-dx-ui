@@ -1,0 +1,61 @@
+{
+ "items": [
+  {
+   "id": "customer-support",
+   "name": "Customer support",
+   "purpose": "Understands customer requests, checks relevant policies and prepares next steps.",
+   "category": "Service",
+   "icon": "✳",
+   "source": "generic_events",
+   "counts": {
+    "cases": 3,
+    "questions_open": 1,
+    "needs_review": 2
+   },
+   "statuses": {
+    "evidence_required": 1,
+    "ready": 1,
+    "waiting": 1
+   }
+  },
+  {
+   "id": "invoice-reviewer",
+   "name": "Invoice reviewer",
+   "purpose": "Checks invoices against purchase orders and identifies approvals that need attention.",
+   "category": "Finance",
+   "icon": "◈",
+   "source": "generic_events",
+   "counts": {
+    "cases": 3,
+    "questions_open": 1,
+    "needs_review": 2
+   },
+   "statuses": {
+    "capability_gap": 1,
+    "ready": 1,
+    "waiting": 1
+   }
+  },
+  {
+   "id": "transport-operations",
+   "name": "Transport coordinator",
+   "purpose": "Interprets shipment requests and compares available transport records",
+   "category": "Operations",
+   "icon": "↗",
+   "source": "legacy_cases",
+   "counts": {
+    "cases": 5,
+    "questions_open": 1,
+    "needs_review": 4
+   },
+   "statuses": {
+    "capability_gap": 1,
+    "evidence_required": 1,
+    "internal_review": 1,
+    "ready": 1,
+    "waiting": 1
+   }
+  }
+ ],
+ "organization": "DEMO-WORKSPACE"
+}

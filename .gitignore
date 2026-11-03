@@ -1,0 +1,14 @@
+node_modules/
+.next/
+out/
+coverage/
+*.tsbuildinfo
+next-env.d.ts
+.env*.local
+# Operator configuration contains organization/backends mapping and key hashes.
+config/control-center.config.json
+screenshots/raw/
+
+.vercel
+.env
+.env*.local
